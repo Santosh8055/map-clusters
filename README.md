@@ -1,27 +1,11 @@
-# MapBoxCluster
+##Clustering
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.3.8.
+It is combining locations of close proximity into clusters, and simplify the display of markers on the map.
 
-## Development server
+There a number on a cluster indicates how many locations it contains. You can click on each cluster and map zooms into that location and cluster splits into smaller clusters or individual location.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+You can also zoom into any of the cluster locations, the number on the cluster decreases, and you begin to see the individual location on the map. Zooming out of the map consolidates the locations into clusters again.
 
-## Code scaffolding
+##Reset button
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
-
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+Notice that there is a reset button on the top. If you click on that button to reset the map into default cordinates and default zoom

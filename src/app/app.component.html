@@ -1,1 +1,19 @@
-<div id="container"></div>
+<nav class="navbar  navbar-light bg-light">
+    <a class="navbar-brand" href="#">Map</a>
+    <form class="form-inline my-2 my-lg-0">
+        <button class="btn btn-outline-primary my-2 my-sm-0" (click)="reset()">Reset</button>
+    </form>
+</nav>
+<div class="container">
+    <div class="row pt-1">
+        <div class="col-sm">
+            <div #container class="map border border-primary"></div>
+        </div>
+        <div class="col-sm data">
+            <pre>
+            {{data | json}}
+            </pre>
+        </div>
+
+    </div>
+</div>

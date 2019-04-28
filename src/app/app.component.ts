@@ -1,85 +1,155 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import mapboxgl from 'mapbox-gl';
-import { HttpClient } from '@angular/common/http';
+import { DataService } from './data.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
-  title = 'map-box-cluster';
+export class AppComponent implements OnInit {
+  @ViewChild('container') container: ElementRef;
 
-  constructor(private http: HttpClient) {
-    this.http.get('./assets/data.json').subscribe(data => {
-      // Create mapbox-gl instance.
-      const map = new mapboxgl.Map({
-        container: document.getElementById('container'),
-        style: {
-          version: 8,
-          zoom: 8, // default zoom.
-          center: [0, 51.5], // default center coordinate in [longitude, latitude] format.
-          sources: {
-            // Using an open-source map tile layer.
-            'simple-tiles': {
-              type: 'raster',
-              tiles: [
-                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png'
-              ],
-              tileSize: 256
-            }
-          },
-          layers: [
-            {
-              id: 'simple-tiles',
-              type: 'raster',
-              source: 'simple-tiles',
-              minzoom: 0,
-              maxzoom: 22
-            }
-          ]
+  public map;
+  public data;
+
+  constructor(private dataSerive: DataService) {}
+
+  reset() {
+    this.map.flyTo({ center: [0, 51.5], zoom: 8 });
+  }
+
+  initMap(data) {
+    mapboxgl.accessToken =
+      'pk.eyJ1IjoicHNhbnRvc2giLCJhIjoiY2p1eG1kYm5mMDdrYTQ0bzRrZTlwaGdneSJ9.0dbSNT9e-olStlkUmN9HRg';
+    this.map = new mapboxgl.Map({
+      container: this.container.nativeElement,
+      style: 'mapbox://styles/mapbox/light-v10',
+      zoom: 8,
+      center: [0, 51.5]
+    });
+    this.map.on('load', () => {
+      this.map.addSource('locations', {
+        type: 'geojson',
+        data,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50
+      });
+
+      this.map.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'locations',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#51bbd6',
+            100,
+            '#f1f075',
+            750,
+            '#f28cb1'
+          ],
+          'circle-radius': ['step', ['get', 'point_count'], 20, 100, 30, 750, 40]
         }
       });
-      map.on('load', () => {
-        // Add points to map as a GeoJSON source.
-        map.addSource('points', {
-          type: 'geojson',
-          data
-        });
 
-        // Add a layer to the map to render the GeoJSON points.
-        map.addLayer({
-          id: 'points',
-          type: 'circle',
-          source: 'points',
-          paint: {
-            'circle-radius': 5,
-            'circle-color': '#ff5500',
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#000'
-          }
-        });
+      this.map.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'locations',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12
+        }
+      });
 
-        // Show a popup when clicking on a point.
-        map.on('click', 'points', event => {
-          console.log(event);
-          new mapboxgl.Popup()
-            .setLngLat(event.lngLat)
-            .setHTML('Clicked on ' + event.features.length + ' feature(s).')
-            .addTo(map);
-        });
+      this.map.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'locations',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': '#11b4da',
+          'circle-radius': 8,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#fff'
+        }
+      });
 
-        // Change the cursor to a pointer when the mouse is over the points layer.
-        map.on('mouseenter', 'points', () => {
-          map.getCanvas().style.cursor = 'pointer';
-        });
+      // Show a popup when clicking on a point.
+      this.map.on('click', 'clusters', e => {
+        var features = this.map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+        var clusterId = features[0].properties.cluster_id;
+        this.map.getSource('locations').getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err) return;
 
-        // Change it back to a pointer when it leaves.
-        map.on('mouseleave', 'points', () => {
-          map.getCanvas().style.cursor = '';
+          this.map.easeTo({
+            center: features[0].geometry.coordinates,
+            zoom: zoom
+          });
         });
       });
+
+      this.map.on('click', 'unclustered-point', event => {
+        let html = `
+        <div>
+        <div>Properties</div>
+          <table>`;
+        let properties = event.features[0].properties;
+        for (const key in properties) {
+          if (properties.hasOwnProperty(key)) {
+            const element = properties[key];
+            html += `
+              <tr><td>${key}</td><td>${element}</td></tr>
+            `;
+          }
+        }
+        html += `
+              <tr><td>Latitude</td><td>${event.lngLat.lat}</td></tr>
+            `;
+        html += `
+              <tr><td>Longitude</td><td>${event.lngLat.lng}</td></tr>
+            `;
+        html += `</table>          
+        </div>
+        `;
+        new mapboxgl.Popup()
+          .setLngLat(event.lngLat)
+          .setHTML(html)
+          .addTo(this.map);
+      });
+
+      // Change the cursor to a pointer when the mouse is over the points layer.
+      this.map.on('mouseenter', 'clusters', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+
+      // Change it back to a pointer when it leaves.
+      this.map.on('mouseleave', 'clusters', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
+
+      // Change the cursor to a pointer when the mouse is over the points layer.
+      this.map.on('mouseenter', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+
+      // Change it back to a pointer when it leaves.
+      this.map.on('mouseleave', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
+    });
+  }
+
+  ngOnInit(): void {
+    this.dataSerive.getData('./assets/data.json').subscribe(data => {
+      this.data = data;
+      this.initMap(data);
     });
   }
 }
