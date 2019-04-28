@@ -1,10 +1,53 @@
 <nav class="navbar  navbar-light bg-light">
     <a class="navbar-brand" href="#">Map</a>
     <form class="form-inline my-2 my-lg-0">
+        <!-- Button trigger modal -->
+        <button type="button" class="btn btn-info mr-2" data-toggle="modal"
+            data-target="#infoModal">
+            Info
+        </button>
         <button class="btn btn-outline-primary my-2 my-sm-0" (click)="reset()">Reset</button>
+
     </form>
 </nav>
 <div class="container">
+    <!-- Modal -->
+    <div class="modal fade" id="infoModal" tabindex="-1" role="dialog"
+        aria-labelledby="infoModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="infoModalLabel">Information</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <h4>Clustering</h4>
+
+                    It is combining locations of close proximity into clusters, and simplify the
+                    display of markers on the map.
+
+                    There a number on a cluster indicates how many locations it contains. You can
+                    click on each cluster and map zooms into that location and cluster splits into
+                    smaller clusters or individual location.
+
+                    You can also zoom into any of the cluster locations, the number on the cluster
+                    decreases, and you begin to see the individual location on the map. Zooming out
+                    of the map consolidates the locations into clusters again.
+
+                    When you click on an individual location a popup will apper with related info of
+                    that perticular location. Info will contain the properties sent in the file.
+
+                    <h4>Reset button</h4>
+
+                    Notice that there is a reset button on the top. If you click on that button to
+                    reset the map into default cordinates and default zoom
+
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row pt-1">
         <div class="col-sm">
             <div #container class="map border border-primary"></div>
